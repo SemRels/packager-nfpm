@@ -115,6 +115,7 @@ jobs:
           cd plugin
           git config user.name  "semrel-sync-bot"
           git config user.email "bot@semrel.io"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/SemRels/${PLUGIN}.git"
           if git diff --quiet; then
             echo "OK $PLUGIN - no changes needed"
             exit 0
@@ -133,8 +134,8 @@ jobs:
           fi
           git checkout -b "$BRANCH"
           git add -A
-          git commit -m "chore: sync from plugin-template@${SHORT_SHA} — $CHANGED"
+          git commit -m "chore: sync from plugin-template@${SHORT_SHA} -- $CHANGED"
           git push origin "$BRANCH"
           TITLE="chore: sync from plugin-template"
           BODY="Automated sync from SemRels/plugin-template (${SHORT_SHA}). Updated: $CHANGED"
-          gh pr create --repo "SemRels/$PLUGIN" --title "$TITLE" --body "$BODY" --base main --label "sync" || echo "PR may already exist"
+          gh pr create --repo "SemRels/$PLUGIN" --title "$TITLE" --body "$BODY" --base main || echo "PR may already exist"
