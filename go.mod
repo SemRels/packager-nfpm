@@ -1,4 +1,4 @@
-module github.com/SemRels/plugin-template
+module github.com/SemRels/packager-nfpm
 
 go 1.25
 
