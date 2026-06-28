@@ -3,31 +3,86 @@
 
 package plugin
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"io"
+	"os/exec"
+	"strings"
+)
 
-// Provider defines the minimal contract a SemRel provider plugin should implement.
+// Packager wraps nfpm invocation for SemRel release packaging.
+type Packager struct {
+	name string
+}
+
 type Provider interface {
 	Name() string
 	HealthCheck(context.Context) error
 }
 
-// ProviderPlugin is a small default implementation that can be extended or replaced.
-type ProviderPlugin struct {
-	name string
-}
-
-func NewProvider(name string) *ProviderPlugin {
+func NewPackager(name string) *Packager {
 	if name == "" {
 		name = "packager-nfpm"
 	}
 
-	return &ProviderPlugin{name: name}
+	return &Packager{name: name}
 }
 
-func (p *ProviderPlugin) Name() string {
+func (p *Packager) Name() string {
 	return p.name
 }
 
-func (p *ProviderPlugin) HealthCheck(context.Context) error {
+func (p *Packager) HealthCheck(context.Context) error {
+	return nil
+}
+
+func SplitPackagers(value string) []string {
+	parts := strings.Split(value, ",")
+	packagers := make([]string, 0, len(parts))
+	for _, item := range parts {
+		trimmed := strings.TrimSpace(item)
+		if trimmed != "" {
+			packagers = append(packagers, trimmed)
+		}
+	}
+	if len(packagers) == 0 {
+		return []string{"deb", "rpm", "apk"}
+	}
+	return packagers
+}
+
+func BuildCommands(configPath, targetDir string, packagers []string) [][]string {
+	commands := make([][]string, 0, len(packagers))
+	for _, packager := range packagers {
+		commands = append(commands, []string{
+			"nfpm",
+			"package",
+			"--config",
+			configPath,
+			"--target",
+			targetDir,
+			"--packager",
+			packager,
+		})
+	}
+	return commands
+}
+
+func RunCommands(commands [][]string, stdout, stderr io.Writer, dryRun bool) error {
+	for _, args := range commands {
+		if dryRun {
+			_, _ = fmt.Fprintf(stdout, "packager-nfpm: [dry-run] would run: %s\n", strings.Join(args, " "))
+			continue
+		}
+
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("run %s: %w", strings.Join(args, " "), err)
+		}
+	}
+
 	return nil
 }

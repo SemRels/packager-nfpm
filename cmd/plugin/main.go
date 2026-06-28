@@ -4,22 +4,56 @@
 package main
 
 import (
-	"context"
-	"log"
+	"fmt"
+	"io"
 	"os"
+	"strings"
 
-	grpcserver "github.com/SemRels/packager-nfpm/internal/grpc"
-	semrelplugin "github.com/SemRels/packager-nfpm/internal/plugin"
+	"github.com/SemRels/packager-nfpm/internal/plugin"
 )
 
-func main() {
-	provider := semrelplugin.NewProvider("packager-nfpm")
-	server := grpcserver.NewProviderServer(provider)
+const pluginSchemaVersion = 1
 
-	if _, err := server.Health(context.Background()); err != nil {
-		log.Printf("plugin health check failed: %v", err)
-		os.Exit(1)
+func main() {
+	os.Exit(run(os.Stdout, os.Stderr, os.Getenv))
+}
+
+func run(stdout, stderr io.Writer, getenv func(string) string) int {
+	_, _ = fmt.Fprintf(stderr, "plugin_schema_version=%d\n", pluginSchemaVersion)
+
+	version := getenv("SEMREL_VERSION")
+	if version == "" {
+		version = getenv("SEMREL_NEXT_VERSION")
+	}
+	if version == "" {
+		fmt.Fprintln(stderr, "packager-nfpm: SEMREL_VERSION is required")
+		return 1
 	}
 
-	log.Printf("%s plugin template is ready", provider.Name())
+	configPath := getenv("SEMREL_PLUGIN_CONFIG")
+	if configPath == "" {
+		configPath = "nfpm.yaml"
+	}
+
+	targetDir := getenv("SEMREL_PLUGIN_TARGET")
+	if targetDir == "" {
+		targetDir = "dist"
+	}
+
+	packagers := plugin.SplitPackagers(getenv("SEMREL_PLUGIN_PACKAGERS"))
+	commands := plugin.BuildCommands(configPath, targetDir, packagers)
+	dryRun := strings.EqualFold(getenv("SEMREL_DRY_RUN"), "true")
+
+	if err := plugin.RunCommands(commands, stdout, stderr, dryRun); err != nil {
+		fmt.Fprintln(stderr, "packager-nfpm:", err)
+		return 1
+	}
+
+	if dryRun {
+		fmt.Fprintf(stdout, "packager-nfpm: [dry-run] package pipeline resolved for version %s\n", version)
+		return 0
+	}
+
+	fmt.Fprintf(stdout, "packager-nfpm: built packages for version %s\n", version)
+	return 0
 }

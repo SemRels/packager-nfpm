@@ -4,25 +4,39 @@
 package plugin
 
 import (
-	"context"
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewProviderDefaultsName(t *testing.T) {
+func TestSplitPackagersDefaults(t *testing.T) {
 	t.Parallel()
 
-	provider := NewProvider("")
-
-	require.Equal(t, "packager-nfpm", provider.Name())
-	require.NoError(t, provider.HealthCheck(context.Background()))
+	require.Equal(t, []string{"deb", "rpm", "apk"}, SplitPackagers(""))
 }
 
-func TestNewProviderUsesProvidedName(t *testing.T) {
+func TestSplitPackagersParsesCSV(t *testing.T) {
 	t.Parallel()
 
-	provider := NewProvider("provider-example")
+	require.Equal(t, []string{"deb", "rpm"}, SplitPackagers("deb, rpm"))
+}
 
-	require.Equal(t, "provider-example", provider.Name())
+func TestBuildCommands(t *testing.T) {
+	t.Parallel()
+
+	commands := BuildCommands("nfpm.yaml", "dist", []string{"deb", "rpm"})
+	require.Len(t, commands, 2)
+	require.Equal(t, []string{"nfpm", "package", "--config", "nfpm.yaml", "--target", "dist", "--packager", "deb"}, commands[0])
+	require.Equal(t, []string{"nfpm", "package", "--config", "nfpm.yaml", "--target", "dist", "--packager", "rpm"}, commands[1])
+}
+
+func TestRunCommandsDryRun(t *testing.T) {
+	t.Parallel()
+
+	var out bytes.Buffer
+	var errBuf bytes.Buffer
+	err := RunCommands([][]string{{"nfpm", "package", "--config", "nfpm.yaml"}}, &out, &errBuf, true)
+	require.NoError(t, err)
+	require.Contains(t, out.String(), "[dry-run] would run")
 }

@@ -1,8 +1,6 @@
 # packager-nfpm
 
-> Replace this description with what your SemRel plugin does.
-
-This repository is based on the `SemRels/plugin-template` GitHub template and provides a clean starting point for provider, analyzer, generator, updater, hook, packager, or publisher plugins.
+nFPM packager plugin for semrel. It creates Linux packages (`deb`, `rpm`, `apk`) by invoking `nfpm package` during the release pipeline.
 
 ## Repository Layout
 
@@ -27,15 +25,25 @@ go test ./...
 
 ## Configuration
 
-See the SemRel documentation for plugin configuration and runtime integration details:
+Configure in `.semrel.yaml`:
 
-- https://github.com/SemRels/semrel
-- https://registry.semrel.io
+```yaml
+plugins:
+	- uses: packager-nfpm
+		args:
+			config: packaging/nfpm.yaml
+			target: dist/packages
+			packagers: deb,rpm,apk
+```
 
-## Next Steps
+Runtime inputs:
 
-1. Replace all `{{...}}` placeholders.
-2. Rename the module path in `go.mod`.
-3. Implement your plugin logic in `internal/plugin/`.
-4. Wire generated protobuf bindings into `internal/grpc/`.
-5. Create your first tagged release with `v*.*.*`.
+- `SEMREL_VERSION` / `SEMREL_NEXT_VERSION` (required)
+- `SEMREL_DRY_RUN` (`true` to print commands only)
+- `SEMREL_PLUGIN_CONFIG` (default: `nfpm.yaml`)
+- `SEMREL_PLUGIN_TARGET` (default: `dist`)
+- `SEMREL_PLUGIN_PACKAGERS` (CSV, default: `deb,rpm,apk`)
+
+Dependencies:
+
+- `nfpm` must be installed and available on `PATH`.
