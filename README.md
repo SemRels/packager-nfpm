@@ -1,5 +1,7 @@
 # packager-nfpm
 
+[![Latest Release](https://img.shields.io/github/v/release/SemRels/packager-nfpm?label=version\&color=blue)](https://github.com/SemRels/packager-nfpm/releases/latest)
+
 nFPM packager plugin for semrel. It creates Linux packages (`deb`, `rpm`, `apk`) by invoking `nfpm package` during the release pipeline.
 
 ## Repository Layout
