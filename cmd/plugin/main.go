@@ -26,7 +26,7 @@ func run(stdout, stderr io.Writer, getenv func(string) string) int {
 		version = getenv("SEMREL_NEXT_VERSION")
 	}
 	if version == "" {
-		fmt.Fprintln(stderr, "packager-nfpm: SEMREL_VERSION is required")
+		_, _ = fmt.Fprintln(stderr, "packager-nfpm: SEMREL_VERSION is required")
 		return 1
 	}
 
@@ -45,15 +45,15 @@ func run(stdout, stderr io.Writer, getenv func(string) string) int {
 	dryRun := strings.EqualFold(getenv("SEMREL_DRY_RUN"), "true")
 
 	if err := plugin.RunCommands(commands, stdout, stderr, dryRun); err != nil {
-		fmt.Fprintln(stderr, "packager-nfpm:", err)
+		_, _ = fmt.Fprintln(stderr, "packager-nfpm:", err)
 		return 1
 	}
 
 	if dryRun {
-		fmt.Fprintf(stdout, "packager-nfpm: [dry-run] package pipeline resolved for version %s\n", version)
+		_, _ = fmt.Fprintf(stdout, "packager-nfpm: [dry-run] package pipeline resolved for version %s\n", version)
 		return 0
 	}
 
-	fmt.Fprintf(stdout, "packager-nfpm: built packages for version %s\n", version)
+	_, _ = fmt.Fprintf(stdout, "packager-nfpm: built packages for version %s\n", version)
 	return 0
 }
