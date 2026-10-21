@@ -35,20 +35,30 @@ Configure in `.semrel.yaml`:
 
 ```yaml
 plugins:
-	- uses: packager-nfpm
-		args:
-			config: packaging/nfpm.yaml
-			target: dist/packages
-			packagers: deb,rpm,apk
+  - uses: "@semrel/packager-nfpm"
+    phase: release
+    args:
+      config: packaging/nfpm.yaml
+      target: dist/packages
+      packagers: deb,rpm,apk
 ```
 
-Runtime inputs:
+## Options
 
-- `SEMREL_VERSION` / `SEMREL_NEXT_VERSION` (required)
-- `SEMREL_DRY_RUN` (`true` to print commands only)
-- `SEMREL_PLUGIN_CONFIG` (default: `nfpm.yaml`)
-- `SEMREL_PLUGIN_TARGET` (default: `dist`)
-- `SEMREL_PLUGIN_PACKAGERS` (CSV, default: `deb,rpm,apk`)
+Every option can be set as an entry under `args` in `.semrel.yaml`. semrel passes each entry to the plugin as the environment variable shown in the table, so you can also set that variable directly (for example in your CI environment) instead of using `args`.
+
+| Argument | Environment variable | Required | Description | Default |
+| --- | --- | --- | --- | --- |
+| `config` | `SEMREL_PLUGIN_CONFIG` | Optional | Path to the nFPM configuration file. | `nfpm.yaml` |
+| `target` | `SEMREL_PLUGIN_TARGET` | Optional | Directory the packages are written to. | `dist` |
+| `packagers` | `SEMREL_PLUGIN_PACKAGERS` | Optional | Comma-separated package formats to build. | `deb,rpm,apk` |
+
+Release context:
+
+| Variable | Description |
+| --- | --- |
+| `SEMREL_VERSION` / `SEMREL_NEXT_VERSION` | Required release version. |
+| `SEMREL_DRY_RUN` | `true` prints the commands only. |
 
 Dependencies:
 
