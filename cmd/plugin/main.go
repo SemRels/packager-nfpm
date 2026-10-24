@@ -50,6 +50,7 @@ func run(stdout, stderr io.Writer, getenv func(string) string) int {
 	}
 
 	if dryRun {
+		_, _ = fmt.Fprintf(stderr, "[dry-run] packager-nfpm: would publish %d package(s) to %s for version %s\n", len(commands), targetDir, version)
 		_, _ = fmt.Fprintf(stdout, "packager-nfpm: [dry-run] package pipeline resolved for version %s\n", version)
 		return 0
 	}
