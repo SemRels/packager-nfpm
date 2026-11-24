@@ -5,6 +5,10 @@ package main
 
 import (
 	"bytes"
+	"errors"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -35,6 +39,46 @@ func TestIntegrationDryRunBuildPlanAndInvalidVersion(t *testing.T) {
 	code = run(&stdout, &stderr, packagerEnv(nil))
 	if code != 1 || !strings.Contains(stderr.String(), "SEMREL_VERSION is required") {
 		t.Fatalf("invalid configuration: code = %d, stderr = %q", code, stderr.String())
+	}
+}
+
+func TestDryRunNumericTrueDoesNotExecuteNfpm(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX shell fixture")
+	}
+
+	dir := t.TempDir()
+	marker := filepath.Join(dir, "executed")
+	nfpm := filepath.Join(dir, "nfpm")
+	if err := os.WriteFile(nfpm, []byte("#!/bin/sh\nprintf executed > \"$NFPM_TEST_MARKER\"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("NFPM_TEST_MARKER", marker)
+
+	var stdout, stderr bytes.Buffer
+	code := run(&stdout, &stderr, packagerEnv(map[string]string{
+		"SEMREL_VERSION": "1.2.3",
+		"SEMREL_DRY_RUN": "1",
+	}))
+	if _, err := os.Stat(marker); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("nfpm executed or marker could not be checked: %v", err)
+	}
+	if code != 0 || !strings.Contains(stdout.String(), "[dry-run]") {
+		t.Fatalf("dry-run code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = run(&stdout, &stderr, packagerEnv(map[string]string{
+		"SEMREL_VERSION": "1.2.3",
+		"SEMREL_DRY_RUN": "0",
+	}))
+	if code != 0 {
+		t.Fatalf("normal run code=%d stderr=%q", code, stderr.String())
+	}
+	if _, err := os.Stat(marker); err != nil {
+		t.Fatalf("normal run did not execute nfpm: %v", err)
 	}
 }
 

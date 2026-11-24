@@ -42,7 +42,8 @@ func run(stdout, stderr io.Writer, getenv func(string) string) int {
 
 	packagers := plugin.SplitPackagers(getenv("SEMREL_PLUGIN_PACKAGERS"))
 	commands := plugin.BuildCommands(configPath, targetDir, packagers)
-	dryRun := strings.EqualFold(getenv("SEMREL_DRY_RUN"), "true")
+	dryRunValue := getenv("SEMREL_DRY_RUN")
+	dryRun := strings.EqualFold(dryRunValue, "true") || dryRunValue == "1"
 
 	if err := plugin.RunCommands(commands, stdout, stderr, dryRun); err != nil {
 		_, _ = fmt.Fprintln(stderr, "packager-nfpm:", err)
