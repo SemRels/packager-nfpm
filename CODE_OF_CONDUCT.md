@@ -1,6 +1,6 @@
 # Code of Conduct
 
-packager-nfpm is committed to providing a welcoming and harassment-free community.
+`packager-nfpm` is committed to providing a welcoming and harassment-free community.
 
 ## Our Pledge
 
