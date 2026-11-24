@@ -72,6 +72,7 @@ func BuildCommands(configPath, targetDir string, packagers []string) [][]string 
 func RunCommands(commands [][]string, stdout, stderr io.Writer, dryRun bool) error {
 	for _, args := range commands {
 		if dryRun {
+			_, _ = fmt.Fprintf(stderr, "[dry-run] packager-nfpm: would publish package with %s\n", strings.Join(args, " "))
 			_, _ = fmt.Fprintf(stdout, "packager-nfpm: [dry-run] would run: %s\n", strings.Join(args, " "))
 			continue
 		}
